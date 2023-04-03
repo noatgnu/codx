@@ -1,4 +1,5 @@
 from unittest import TestCase
+
 from codx.components import create_db, \
     get_feature_from_gene_ids, three_frame_translation, get_geneids_from_uniprot
 
@@ -33,3 +34,12 @@ class Test(TestCase):
         gene = db.get_gene("ADRM1")
         data = [three_frame_translation(i.seq, only_start_at_atg=True) for i in gene.shuffle_blocks()]
         print(data)
+
+    def test_shuffle_blocks(self):
+        db = create_db(["11047"])
+        gene = db.get_gene("ADRM1")
+        data = [i for i in gene.shuffle_blocks(include_intron=True)]
+        assert len(data) == 262143
+
+
+

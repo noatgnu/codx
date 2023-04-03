@@ -8,7 +8,8 @@ from uniprotparser.betaparser import UniprotParser
 Entrez.email = "tphung001@dundee.ac.uk"
 
 
-def get_geneids_from_uniprot(uniprot_accs: Set[str]|List[str]) -> Set[str]:
+def  get_geneids_from_uniprot(uniprot_accs: Set[str]|List[str]) -> Set[str]:
+    # Get gene ids from uniprot accession ids using uniprot REST api
     parser = UniprotParser(columns="accession,id,gene_names,protein_name,organism_name,organism_id,length,xref_refseq,xref_geneid")
     results = []
     for i in parser.parse(ids=uniprot_accs):
@@ -28,14 +29,21 @@ def get_geneids_from_uniprot(uniprot_accs: Set[str]|List[str]) -> Set[str]:
                 gene_ids.add(arr[0].strip())
     return gene_ids
 
+def translate(seq: str | Seq.Seq, only_start_with_codons = ["ATG"]):
+    seq_length = len(seq)
+    if only_start_with_codons:
+        for c in range(0, seq_length, 3):
+            if c + 3 <= seq_length:
+                if str(seq[c: c + 3]).upper() in only_start_with_codons:
+                    return Seq.translate(seq[c: seq_length], to_stop=True)
 
-def three_frame_translation(seq: str | Seq.Seq, reverse: bool = False, only_start_at_atg = False):
+def three_frame_translation(seq: str | Seq.Seq, reverse: bool = False, only_start_with_codons = ["ATG"]):
     # Translate a sequence into all 3 frames
     """
 
     :param seq: dna or rna sequence
     :param reverse: whether to reverse complement the sequence
-    :param only_start_at_atg: whether or not to only start translation at ATG codon
+    :param only_start_with_codons: whether or not to only start translation with these codons
     :return: a dictionary of frames and translated sequences
     """
     if reverse:
@@ -47,10 +55,10 @@ def three_frame_translation(seq: str | Seq.Seq, reverse: bool = False, only_star
     for i in range(0, 3):
         fragment_length = 3 * ((length - i) // 3)
         start_pos = i
-        if only_start_at_atg:
+        if only_start_with_codons:
             for c in range(i, i + fragment_length, 3):
                 if c + 3 <= i + fragment_length:
-                    if str(seq[c: c+3]).upper() == "ATG":
+                    if str(seq[c: c+3]).upper() in only_start_with_codons:
                         start_pos = c
                         break
             if start_pos != c:
@@ -226,11 +234,17 @@ class GeneDatabase:
         self.cursor.execute("DELETE FROM exon WHERE EXISTS( SELECT 1 FROM exon AS e2 WHERE e2.start = exon.start AND e2.end = exon.end AND e2.gene_name = exon.gene_name AND e2.rowid > exon.rowid)")
         self.conn.commit()
 
+    def iterate_genes(self):
+        gene_recs = self.cursor.execute("SELECT * FROM gene").fetchall()
+        for gene_rec in gene_recs:
+            yield self.get_gene(gene_rec[0])
+
 
 def get_gene_from_geneid(gene_ids: List[str] | Set[str], interval = 100):
     # create input string from gene id list with 100 gene ids per string
     gene_count = len(gene_ids)
     results = []
+    gene_ids = list(gene_ids)
     for i in range(0, gene_count, interval):
         gene_id_str = ",".join(gene_ids[i:i + interval])
         results.append(gene_id_str)
