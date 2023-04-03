@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "codx"
-version = "0.1.1"
+version = "0.1.2"
 description = "A package used to retrieve exon for protein sequences from RefSeqGene database"
 authors = ["Toan Phung <toan.phungkhoiquoctoan@gmail.com>"]
 readme = "README.md"

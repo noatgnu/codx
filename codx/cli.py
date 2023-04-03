@@ -1,6 +1,7 @@
 import codx.components as cc
 import click
 
+
 @click.command()
 @click.argument("ids", required=True)
 @click.option("--output", "-o", default="output.fasta", help="Output file")

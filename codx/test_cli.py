@@ -18,3 +18,8 @@ class TestCli:
         runner = CliRunner()
         result = runner.invoke(main, ["11047", "--translate"])
         assert result.exit_code == 0
+
+    def test_main_three_frame_translate(self):
+        runner = CliRunner()
+        result = runner.invoke(main, ["11047", "-3"])
+        assert result.exit_code == 0
